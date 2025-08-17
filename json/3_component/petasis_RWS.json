@@ -1,0 +1,22 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/petasis_reagent_0.smi",
+        "../REAGENTS/petasis_reagent_1.smi",
+        "../REAGENTS/petasis_reagent_2.smi"
+    ],
+    "reaction_smarts": "[#7H2]-[#6H:1].[#6](-[#6:2])=O.[#6:3]-[#5](-[#8])-[#8]>>[#6:1]-[#7]-[#6](-[#6:3])-[#6:2]",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/petasis.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}

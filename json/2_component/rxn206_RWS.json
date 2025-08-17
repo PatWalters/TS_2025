@@ -1,0 +1,21 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/rxn206_reagent_0.smi",
+        "../REAGENTS/rxn206_reagent_1.smi"
+    ],
+    "reaction_smarts": "[#6;A;D3$(C([#6])[#6]),D2$(C[#6]):1][#8;A;D1].[#7;A;D2;$(N([#6])S(=O)=O):2]>>[#6:1]-[#7:2]",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/rxn206.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}

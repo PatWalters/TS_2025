@@ -1,0 +1,22 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/passerini_reagent_0.smi",
+        "../REAGENTS/passerini_reagent_1.smi",
+        "../REAGENTS/passerini_reagent_2.smi"
+    ],
+    "reaction_smarts": "[#6:1]C(=O)[OH].[#6:2]C(=O)[#6:3].[C-]#[N+][#6:4]>>[#6:4][NH]C(=O)C([#6:3])([#6:2])OC(=O)[#6:1]",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/passerini.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}

@@ -1,0 +1,22 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/dobener_reagent_0.smi",
+        "../REAGENTS/dobener_reagent_1.smi",
+        "../REAGENTS/dobener_reagent_2.smi"
+    ],
+    "reaction_smarts": "[#7H2:2]-[c:3]1[cH:7][c:1][c:6][c:5][c:4]1.[#6H](-[#6:8])=O.[#6:9]-[#6]-[#6](=O)-[#6](=O)-[#8]-[#6:10]>>[#6:10]-[#8]-[#6](=O)-c1c(-[#6:9])c(-[#6:8])[n:2][c:3]2[c:4][c:5][c:6][c:1][c:7]12",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/dobener.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}

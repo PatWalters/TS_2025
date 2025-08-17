@@ -1,0 +1,17 @@
+{
+    "reagent_file_list": [
+        "2_component/rxn203_reagent_0.smi",
+        "2_component/rxn203_reagent_1.smi"
+    ],
+    "reaction_smarts": "[#6;a;$(c1:[c,n]:[c,n]:[c,n]:[c,n]:[c,n]:1):1][#35;A;D1].[#7;A;$(N[#6])!$(N=*)!$([N-])!$(N#*)!$([ND3])!$([ND4])!$(N[O,N])!$(N[C,S]=[S,O,N]):2]>>[#6:1]-[#7:2]",
+    "num_warmup_trials": 5,
+    "num_ts_iterations": 10000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/rxn203.parquet",
+        "ref_colname": "query_001"
+    },
+    "ts_mode": "maximize",
+    "log_filename": "ts_logs.txt",
+    "results_filename": "ts_results.csv"
+}

@@ -1,0 +1,22 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/orru_reagent_0.smi",
+        "../REAGENTS/orru_reagent_1.smi",
+        "../REAGENTS/orru_reagent_2.smi"
+    ],
+    "reaction_smarts": "[#6H](-[#6:1])=O.[#6]-[#8]-[#6](=O)-[#6](-[#6:2])C#N.[#7H2]-[#6:3]>>[#6]-[#8]-[#6](=O)[C@]1([#6:2])[#7]=[#6]-[#7](-[#6:3])-[#6@H]1-[#6:1]",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/orru.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}

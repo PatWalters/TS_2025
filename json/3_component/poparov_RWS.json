@@ -1,0 +1,22 @@
+{
+    "reagent_file_list": [
+        "../REAGENTS/poparov_reagent_0.smi",
+        "../REAGENTS/poparov_reagent_1.smi",
+        "../REAGENTS/poparov_reagent_2.smi"
+    ],
+    "reaction_smarts": "[#7H2]-c1[cH:2][c:3][c:4][c:5][cH:6]1.[#6H](-[#6:7])=[#6H]-[#6:8].[#6H](-[#6:1])=O>>[#6:8]-[#6]-1-[#7]-c2[c:6][c:5][c:4][c:3][c:2]2-[#6](-[#6:1])-[#6]-1-[#6:7]",
+    "nprocesses": 1,
+    "min_cpds_per_core": 50,
+    "num_warmup_trials": 5,
+    "percent_of_library": 0.02,
+    "scaling": 1,
+    "stop": 6000,
+    "evaluator_class_name": "LookupEvaluator",
+    "evaluator_arg": {
+        "ref_filename": "../PARQUET/poparov.parquet",
+        "ref_colname": "query_001"
+    },
+    "log_filename": "rws_amide_rocs_logs.txt",
+    "results_filename": "rws_amide_rocs_logs.csv",
+    "hide_progress": true
+}
