@@ -1,15 +1,15 @@
 {
     "reagent_file_list": [
-        "3_component/petasis_reagent_0.smi",
-        "3_component/petasis_reagent_1.smi",
-        "3_component/petasis_reagent_2.smi"
+        "../reactions/3_component/petasis_reagent_0.smi",
+        "../reactions/3_component/petasis_reagent_1.smi",
+        "../reactions/3_component/petasis_reagent_2.smi"
     ],
-    "reaction_smarts": "[#6;a;$(c1:[c,n]:[c,n]:[c,n]:[c,n]:[c,n]:1):1][#35;A;D1].[#7;A;$(N[#6])!$(N=*)!$([N-])!$(N#*)!$([ND3])!$([ND4])!$(N[O,N])!$(N[C,S]=[S,O,N]):2]>>[#6:1]-[#7:2]",
+    "reaction_smarts": "[#7H2]-[#6H:1].[#6](-[#6:2])=O.[#6:3]-[#5](-[#8])-[#8]>>[#6:1]-[#7]-[#6](-[#6:3])-[#6:2]",
     "num_warmup_trials": 5,
     "num_ts_iterations": 18500,
     "evaluator_class_name": "LookupEvaluator",
     "evaluator_arg": {
-        "ref_filename": "../PARQUET/petasis.parquet",
+        "ref_filename": "../parquet/3_component/petasis.parquet",
         "ref_colname": "query_001"
     },
     "ts_mode": "maximize",

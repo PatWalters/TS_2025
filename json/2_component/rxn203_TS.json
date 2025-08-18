@@ -1,14 +1,14 @@
 {
     "reagent_file_list": [
-        "2_component/rxn203_reagent_0.smi",
-        "2_component/rxn203_reagent_1.smi"
+        "../reactions/2_component/rxn203_reagent_0.smi",
+        "../reactions/2_component/rxn203_reagent_1.smi"
     ],
-    "reaction_smarts": "[#6;a;$(c1:[c,n]:[c,n]:[c,n]:[c,n]:[c,n]:1):1][#35;A;D1].[#7;A;$(N[#6])!$(N=*)!$([N-])!$(N#*)!$([ND3])!$([ND4])!$(N[O,N])!$(N[C,S]=[S,O,N]):2]>>[#6:1]-[#7:2]",
+    "reaction_smarts": "[#7;A;$([N;D1][#6])!$(N[C,S]=[O,N,S]),$([N;D2]([#6])[#6])!$(N[C,S]=[O,N,S]):1].[#7;A;$([N;D1][#6])!$(N[C,S]=[O,N,S]),$([N;D2]([#6])[#6])!$(N[C,S]=[O,N,S]):2]>>[*:1]-[#6](-[*:2])=O",
     "num_warmup_trials": 5,
     "num_ts_iterations": 10000,
     "evaluator_class_name": "LookupEvaluator",
     "evaluator_arg": {
-        "ref_filename": "../PARQUET/rxn203.parquet",
+        "ref_filename": "../parquet/2_component/rxn203.parquet",
         "ref_colname": "query_001"
     },
     "ts_mode": "maximize",

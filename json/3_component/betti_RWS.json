@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../REAGENTS/betti_reagent_0.smi",
-        "../REAGENTS/betti_reagent_1.smi",
-        "../REAGENTS/betti_reagent_2.smi"
+        "../reactions/3_component/betti_reagent_0.smi",
+        "../reactions/3_component/betti_reagent_1.smi",
+        "../reactions/3_component/betti_reagent_2.smi"
     ],
     "reaction_smarts": "[#8]-[c:4]1[cH:3][c:8][c:7][c:6][cH:5]1.[#6H](-[#6:1])=O.[#7H2]-[#6:2]>>[#6:2]-[#7]-[#6](-[#6:1])-[c:3]1[c:8][c:7][c:6][c:5][c:4]1-[#8]",
     "nprocesses": 1,
@@ -13,7 +13,7 @@
     "stop": 6000,
     "evaluator_class_name": "LookupEvaluator",
     "evaluator_arg": {
-        "ref_filename": "../PARQUET/betti.parquet",
+        "ref_filename": "../parquet/3_component/betti.parquet",
         "ref_colname": "query_001"
     },
     "log_filename": "rws_amide_rocs_logs.txt",
