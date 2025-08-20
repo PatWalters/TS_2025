@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/poparov_reagent_0.smi",
-        "../reactions/3_component/poparov_reagent_1.smi",
-        "../reactions/3_component/poparov_reagent_2.smi"
+        "../reactions/3_component/poparov_reactant_0.smi",
+        "../reactions/3_component/poparov_reactant_1.smi",
+        "../reactions/3_component/poparov_reactant_2.smi"
     ],
     "reaction_smarts": "[#7H2]-c1[cH:2][c:3][c:4][c:5][cH:6]1.[#6H](-[#6:7])=[#6H]-[#6:8].[#6H](-[#6:1])=O>>[#6:8]-[#6]-1-[#7]-c2[c:6][c:5][c:4][c:3][c:2]2-[#6](-[#6:1])-[#6]-1-[#6:7]",
     "nprocesses": 1,

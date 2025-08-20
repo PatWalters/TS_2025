@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/groebke-blackburn-bienayme_reagent_0.smi",
-        "../reactions/3_component/groebke-blackburn-bienayme_reagent_1.smi",
-        "../reactions/3_component/groebke-blackburn-bienayme_reagent_2.smi"
+        "../reactions/3_component/groebke-blackburn-bienayme_reactant_0.smi",
+        "../reactions/3_component/groebke-blackburn-bienayme_reactant_1.smi",
+        "../reactions/3_component/groebke-blackburn-bienayme_reactant_2.smi"
     ],
     "reaction_smarts": "[#7H2]-[c:3]1[cD2:4][cD2:5][c:6][cD2:7][n+0:8]1.[#6H](-[#6:1])=O.[#6:2][N+]#[C-]>>[#6:2]-[#7]-c1c(-[#6:1])n[c:3]2[c:4][c:5][c:6][c:7][n:8]12",
     "nprocesses": 1,

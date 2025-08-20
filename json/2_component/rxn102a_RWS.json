@@ -1,7 +1,7 @@
 {
     "reagent_file_list": [
-        "../reactions/2_component/rxn102a_reagent_0.smi",
-        "../reactions/2_component/rxn102a_reagent_1.smi"
+        "../reactions/2_component/rxn102a_reactant_0.smi",
+        "../reactions/2_component/rxn102a_reactant_1.smi"
     ],
     "reaction_smarts": "[#6;a;$(c1:[c,n]:[c,n]:[c,n]:[c,n]:[c,n]:1):1][#35;A;D1].[#7;A;$(N[#6])!$(N=*)!$([N-])!$(N#*)!$([ND3])!$([ND4])!$(N[O,N])!$(N[C,S]=[S,O,N]):2]>>[#6:1]-[#7:2]",
     "nprocesses": 1,

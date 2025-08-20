@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/dobener_reagent_0.smi",
-        "../reactions/3_component/dobener_reagent_1.smi",
-        "../reactions/3_component/dobener_reagent_2.smi"
+        "../reactions/3_component/dobener_reactant_0.smi",
+        "../reactions/3_component/dobener_reactant_1.smi",
+        "../reactions/3_component/dobener_reactant_2.smi"
     ],
     "reaction_smarts": "[#7H2:2]-[c:3]1[cH:7][c:1][c:6][c:5][c:4]1.[#6H](-[#6:8])=O.[#6:9]-[#6]-[#6](=O)-[#6](=O)-[#8]-[#6:10]>>[#6:10]-[#8]-[#6](=O)-c1c(-[#6:9])c(-[#6:8])[n:2][c:3]2[c:4][c:5][c:6][c:1][c:7]12",
     "nprocesses": 1,

@@ -1,7 +1,7 @@
 {
     "reagent_file_list": [
-        "../reactions/2_component/rxn203_reagent_0.smi",
-        "../reactions/2_component/rxn203_reagent_1.smi"
+        "../reactions/2_component/rxn203_reactant_0.smi",
+        "../reactions/2_component/rxn203_reactant_1.smi"
     ],
     "reaction_smarts": "[#7;A;$([N;D1][#6])!$(N[C,S]=[O,N,S]),$([N;D2]([#6])[#6])!$(N[C,S]=[O,N,S]):1].[#7;A;$([N;D1][#6])!$(N[C,S]=[O,N,S]),$([N;D2]([#6])[#6])!$(N[C,S]=[O,N,S]):2]>>[*:1]-[#6](-[*:2])=O",
     "num_warmup_trials": 5,

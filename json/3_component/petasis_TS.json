@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/petasis_reagent_0.smi",
-        "../reactions/3_component/petasis_reagent_1.smi",
-        "../reactions/3_component/petasis_reagent_2.smi"
+        "../reactions/3_component/petasis_reactant_0.smi",
+        "../reactions/3_component/petasis_reactant_1.smi",
+        "../reactions/3_component/petasis_reactant_2.smi"
     ],
     "reaction_smarts": "[#7H2]-[#6H:1].[#6](-[#6:2])=O.[#6:3]-[#5](-[#8])-[#8]>>[#6:1]-[#7]-[#6](-[#6:3])-[#6:2]",
     "num_warmup_trials": 5,

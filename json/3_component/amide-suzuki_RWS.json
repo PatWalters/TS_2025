@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/amide-suzuki_reagent_0.smi",
-        "../reactions/3_component/amide-suzuki_reagent_1.smi",
-        "../reactions/3_component/amide-suzuki_reagent_2.smi"
+        "../reactions/3_component/amide-suzuki_reactant_0.smi",
+        "../reactions/3_component/amide-suzuki_reactant_1.smi",
+        "../reactions/3_component/amide-suzuki_reactant_2.smi"
     ],
     "reaction_smarts": "[#6:2]-[#5](-[#8])-[#8].[#6:9]-[#7H]-[c:6]1[c:7][c:8][c:3][c:4](Br)[c:5]1.[#6:1]-[#6](O)=O>>[#6:9]-[#7](-[#6](-[#6:1])=O)-[c:6]1[c:7][c:8][c:3][c:4](-[#6:2])[c:5]1",
     "nprocesses": 1,

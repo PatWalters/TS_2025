@@ -1,7 +1,7 @@
 {
     "reagent_file_list": [
-        "../reactions/2_component/rxn111b_reagent_0.smi",
-        "../reactions/2_component/rxn111b_reagent_1.smi"
+        "../reactions/2_component/rxn111b_reactant_0.smi",
+        "../reactions/2_component/rxn111b_reactant_1.smi"
     ],
     "reaction_smarts": "[#6;c,$(C(=O)O),$(C#N):3]-,:[#6;A;D2:2]=[#6;A;D1:1].[#6;$([#6]=[#6]),$(c:c):4][#35;A;D1]>>[#6:4]\\[#6:1]=[#6:2]\\[#6:3]",
     "num_warmup_trials": 5,

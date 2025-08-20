@@ -1,7 +1,7 @@
 {
     "reagent_file_list": [
-        "../reactions/2_component/rxn205_reagent_0.smi",
-        "../reactions/2_component/rxn205_reagent_1.smi"
+        "../reactions/2_component/rxn205_reactant_0.smi",
+        "../reactions/2_component/rxn205_reactant_1.smi"
     ],
     "reaction_smarts": "[#6;A;D3$(C([#6])[#6]),D2$(C[#6]):1][#8;A;D1].[#8;A;D1;$(Oc1ccccc1):2]>>[#6:1]-[#8:2]",
     "num_warmup_trials": 5,
