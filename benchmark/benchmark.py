@@ -24,8 +24,6 @@ rxn_df = pd.read_csv("../reactions/reactions.csv")
 
 num_runs = 10
 for idx,[rxn_id, smarts] in enumerate(rxn_df.values):
-    if rxn_id != "groebke-blackburn-bienayme":
-        continue
     rxn_id = rxn_id.strip()
     num_components = len(smarts.split("."))
 
