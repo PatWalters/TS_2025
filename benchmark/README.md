@@ -5,7 +5,7 @@ To benchmark TS
 benchmark.py TS
 ```    
 
-To benchmark RWW
+To benchmark RWS
 ```shell
 benchmark.py RWS
 ```
