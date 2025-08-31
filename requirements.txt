@@ -1,0 +1,8 @@
+joblib==1.4.2
+numpy==2.3.2
+pandas==1.5.3
+rdkit==2025.3.1
+sqlitedict==2.1.0
+tqdm==4.67.1
+useful_rdkit_utils==0.90
+pydantic==2.5.3
