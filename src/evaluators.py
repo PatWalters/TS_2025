@@ -1,25 +1,24 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
+
 import numpy as np
+import useful_rdkit_utils as uru
 from rdkit import Chem
 from rdkit.Chem import rdFingerprintGenerator
 
-import useful_rdkit_utils as uru
-
 try:
-    from openeye import oechem
-    from openeye import oeomega
-    from openeye import oeshape
-    from openeye import oedocking
     import joblib
+    from openeye import oechem, oedocking, oeomega, oeshape
 except ImportError:
     # Since openeye is a commercial software package, just pass with a warning if not available
-    warnings.warn(f"Openeye packages not available in this environment; do not attempt to use ROCSEvaluator or "
-                  f"FredEvaluator")
-from rdkit import Chem, DataStructs
+    warnings.warn(
+        "Openeye packages not available in this environment; do not attempt to use ROCSEvaluator or FredEvaluator"
+    )
 import pandas as pd
+from rdkit import DataStructs
 from sqlitedict import SqliteDict
+
 
 class Evaluator(ABC):
     @abstractmethod
@@ -33,8 +32,7 @@ class Evaluator(ABC):
 
 
 class MWEvaluator(Evaluator):
-    """A simple evaluation class that calculates molecular weight, this was just a development tool
-    """
+    """A simple evaluation class that calculates molecular weight, this was just a development tool"""
 
     def __init__(self):
         self.num_evaluations = 0
@@ -49,8 +47,7 @@ class MWEvaluator(Evaluator):
 
 
 class FPEvaluator(Evaluator):
-    """An evaluator class that calculates a fingerprint Tanimoto to a reference molecule
-    """
+    """An evaluator class that calculates a fingerprint Tanimoto to a reference molecule"""
 
     def __init__(self, input_dict):
         self.ref_smiles = input_dict["query_smiles"]
@@ -71,11 +68,10 @@ class FPEvaluator(Evaluator):
 
 
 class ROCSEvaluator(Evaluator):
-    """An evaluator class that calculates a ROCS score to a reference molecule
-    """
+    """An evaluator class that calculates a ROCS score to a reference molecule"""
 
     def __init__(self, input_dict):
-        ref_filename = input_dict['query_molfile']
+        ref_filename = input_dict["query_molfile"]
         ref_fs = oechem.oemolistream(ref_filename)
         self.ref_mol = oechem.OEMol()
         oechem.OEReadMolecule(ref_fs, self.ref_mol)
@@ -137,16 +133,16 @@ class LookupEvaluator(Evaluator):
 
     def __init__(self, input_dictionary):
         self.num_evaluations = 0
-        ref_filename = input_dictionary['ref_filename']
-        ref_colname = input_dictionary['ref_colname']
-        if ref_filename.endswith(".csv"):
+        ref_filename = input_dictionary["ref_filename"]
+        ref_colname = input_dictionary["ref_colname"]
+        if str(ref_filename).endswith(".csv"):
             ref_df = pd.read_csv(ref_filename)
-        elif ref_filename.endswith(".parquet"):
+        elif str(ref_filename).endswith(".parquet"):
             ref_df = pd.read_parquet(ref_filename)
         else:
-            print(ref_filename,"does not have valid extendsion must be in [.csv,.parquet]")
-            assert(False)
-        self.ref_dict = dict([(a, b) for a, b in ref_df[['Name', ref_colname]].values])
+            print(ref_filename, "does not have valid extendsion must be in [.csv,.parquet]")
+            assert False
+        self.ref_dict = dict([(a, b) for a, b in ref_df[["Name", ref_colname]].values])
 
     @property
     def counter(self):
@@ -160,6 +156,7 @@ class LookupEvaluator(Evaluator):
         else:
             return np.nan
 
+
 class DBEvaluator(Evaluator):
     """A simple evaluator class that looks up values from a database.
     This is primarily used for benchmarking
@@ -167,18 +164,16 @@ class DBEvaluator(Evaluator):
 
     def __init__(self, input_dictionary):
         self.num_evaluations = 0
-        self.db_prefix = input_dictionary['db_prefix']
-        db_filename = input_dictionary['db_filename']
+        self.db_prefix = input_dictionary["db_prefix"]
+        db_filename = input_dictionary["db_filename"]
         self.ref_dict = SqliteDict(db_filename)
 
     def __repr__(self):
         return "DBEvalutor"
 
-
     @property
     def counter(self):
         return self.num_evaluations
-
 
     def evaluate(self, smiles):
         self.num_evaluations += 1
@@ -189,11 +184,10 @@ class DBEvaluator(Evaluator):
             if res == -500:
                 return np.nan
             return res
-    
+
 
 class FredEvaluator(Evaluator):
-    """An evaluator class that docks a molecule with the OEDocking Toolkit and returns the score
-    """
+    """An evaluator class that docks a molecule with the OEDocking Toolkit and returns the score"""
 
     def __init__(self, input_dict):
         du_file = input_dict["design_unit_file"]
@@ -301,8 +295,7 @@ def test_rocs_eval():
 
 
 class MLClassifierEvaluator(Evaluator):
-    """An evaluator class the calculates a score based on a trained ML model
-    """
+    """An evaluator class the calculates a score based on a trained ML model"""
 
     def __init__(self, input_dict):
         self.cls = joblib.load(input_dict["model_filename"])
@@ -315,7 +308,7 @@ class MLClassifierEvaluator(Evaluator):
     def evaluate(self, mol):
         self.num_evaluations += 1
         fp = uru.mol2morgan_fp(mol)
-        return self.cls.predict_proba([fp])[:,1][0]
+        return self.cls.predict_proba([fp])[:, 1][0]
 
 
 def test_ml_classifier_eval():

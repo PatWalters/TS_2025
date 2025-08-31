@@ -1,4 +1,8 @@
-""" Class for random sampling without replacement from a combinatorial library"""
+"""
+This module contains the DisallowTracker class, which is responsible for ensuring that
+reagent combinations are not sampled more than once from a combinatorial library.
+"""
+
 import itertools
 import random
 from collections import defaultdict
@@ -8,97 +12,106 @@ import numpy as np
 
 
 class DisallowTracker:
-    Empty = -1  # a sentinel value meaning fill this reagent spot - used in selection
-    To_Fill = None  # a sentinel value meaning this reagent spot is open - used in selection
+    """
+    A class to track and prevent the resampling of reagent combinations.
+
+    This class is essential for sampling without replacement from a large virtual
+    combinatorial library. It maintains a "disallow mask" to keep track of
+    which combinations have already been evaluated.
+
+    The internal state is managed using two sentinel values:
+    - `Empty` (-1): Represents a component slot that has not yet been filled in a given combination.
+    - `To_Fill` (None): Represents the specific component slot that is currently being selected.
+    """
+
+    Empty = -1
+    To_Fill = None
 
     def __init__(self, reagent_counts: list[int]):
         """
-        Basic Init
-        :param reagent_counts: A list of the number of reagents for each site of diversity in the reaction
+        Initializes the DisallowTracker.
 
-        For example if the library to search has 3 reactants the first with 10 options, the second with 20
-        and the third with 34 then reagent_counts would be the list [10, 20, 34]
+        :param reagent_counts: A list of the number of reagents for each component in the reaction.
+                               For example, [10, 20, 34] for a 3-component reaction.
         """
-
         self._initial_reagent_counts = np.array(reagent_counts)
         self._reagent_exhaust_counts = self._get_reagent_exhaust_counts()
 
-        # this is where we keep track of the disallowed combinations
+        # The core data structure for tracking disallowed combinations.
+        # It maps a partial combination (a tuple of reagent indices) to a set of disallowed
+        # indices for the component marked as `To_Fill`.
         self._disallow_mask: DefaultDict[Tuple[int | None], Set] = defaultdict(set)
-        self._n_sampled = 0 ## number of products sampled
+        self._n_sampled = 0
         self._total_product_size = np.prod(reagent_counts)
 
     @property
     def n_cycles(self) -> int:
-        """ How many cycles are then in this reaction"""
+        """Returns the number of components in the reaction."""
         return len(self._initial_reagent_counts)
 
     def get_disallowed_selection_mask(self, current_selection: list[int | None]) -> Set[int]:
-        """ Returns the disallowed reagents given the current_selection
-        :param current_selection:  list of ints denoting the current selection
-        :return: set[int] of the indices that are disallowed
-
-        Current_selection is of length "n_cycles" for the current reaction and filled at each position
-        with either Disallow_tracker.Empty, Disallow_tracker.To_Fill, or int >= 0
-        additionally, Disallow_tracker.To_Fill can appear only once.
         """
+        Returns the set of disallowed reagent indices for the component being filled.
 
-        """Returns the disallowed reagents given the current"""
-
+        :param current_selection: A list representing the current partial selection. It must contain
+                                  exactly one `To_Fill` value, indicating which component is being selected.
+                                  Example: [12, None, 5] for a 3-component reaction where the second
+                                  component is being selected.
+        :return: A set of integer indices for the reagents that are disallowed for the current selection.
+        """
         if len(current_selection) != self.n_cycles:
-            raise ValueError(f"current_selection must be equal in length to number of sites "
-                             f"({self.n_cycles} for reaction")
+            raise ValueError(
+                f"current_selection must be equal in length to number of sites ({self.n_cycles} for reaction)"
+            )
         if len([v for v in current_selection if v == DisallowTracker.To_Fill]) != 1:
-            raise ValueError(f"current_selection must have exactly one To_Fill slot.")
+            raise ValueError("current_selection must have exactly one To_Fill slot.")
 
         return self._disallow_mask[tuple(current_selection)]
 
     def retire_one_synthon(self, cycle_id: int, synthon_index: int):
+        """
+        Retires a single synthon (reagent) from being selected in the future.
+        This is typically used when a reagent is found to be invalid or unproductive.
+        """
         retire_mask = [self.Empty] * self.n_cycles
         retire_mask[cycle_id] = synthon_index
         self._retire_synthon_mask(retire_mask=retire_mask)
 
     def _retire_synthon_mask(self, retire_mask: list[int]):
-        # get the list of cycles that we need to search for retiring
+        """
+        Recursively updates the disallow mask to retire a synthon or synthon combination.
+        """
+        # Base case: If the mask is fully specified (no Empty slots), it represents a single
+        # product. We update the disallow mask for this product.
         if retire_mask.count(self.Empty) == 0:
-            # if n_to_fill is one - then we have a completed mask (all spot filled)
-            # so say that we sampled this synthon by updating the counts
             self._n_sampled += 1
-            # and then update the disallow tracker
             self._update(retire_mask)
         else:
+            # Recursive step: For each unfilled slot, iterate through all possible reagents
+            # and recursively call this function to retire all combinations involving the
+            # original synthon to be retired.
             for cycle_id in [i for i in range(self.n_cycles) if retire_mask[i] == self.Empty]:
-                # mark which cycle we are going to search for synthons that can be paired with the synthon we are retiring
                 retire_mask[cycle_id] = self.To_Fill
                 ts_locations = np.ones(shape=self._initial_reagent_counts[cycle_id])
-                # update ts_locations
                 disallowed_selections = self.get_disallowed_selection_mask(retire_mask)
-                # added this to catch cases where a reaction fails or a reagent doesn't score - PW
+
                 if len(disallowed_selections):
                     ts_locations[np.array(list(disallowed_selections))] = np.nan
-                # anything that is not nan is still in play so we need to denote
-                # that pairing it with the synthon we will retire is not allowed
+
+                # For all valid remaining synthons, recursively retire them in combination
+                # with the original synthon.
                 for synthon_idx in np.argwhere(~np.isnan(ts_locations)).flatten():
                     retire_mask[cycle_id] = synthon_idx
                     self._retire_synthon_mask(retire_mask=retire_mask)
 
     def update(self, selected: list[int | None]) -> None:
         """
-        Updates the disallow tracker with the selected reagents.
-        :param selected: list[int]
+        Updates the disallow tracker with a newly sampled reagent combination.
 
-        This means that this particular reagent combination will not be sampled again.
+        This ensures that this specific combination will not be sampled again.
 
-        Selected is the list of indexes that maps to what reagent was used at what position
-        For example selected = [4, 5, 3]
-              means reagent 4 at position 0
-                    reagent 5 at position 1
-                    reagent 3 at position 2
-              will not be sampled again
-
-        Two sentinel values are used in this routine:
-            to_fill = None
-            empty = -1
+        :param selected: A list of reagent indices representing the full product.
+                         Example: [4, 5, 3] for a 3-component reaction.
         """
         if len(selected) != self.n_cycles:
             msg = f"DisallowTracker selected size {len(selected)} but reaction has {self.n_cycles} sites of diversity"
@@ -107,14 +120,14 @@ class DisallowTracker:
             if sel is not None and sel >= max_size:
                 raise ValueError(f"Disallowed given index {sel} for site {site_id} which has {max_size} reagents")
 
-        # all ok so call the internal update
         self._update(selected)
 
     def sample(self) -> list[int]:
-        """ Randomly sample from the reaction without replacement"""
+        """Randomly samples one valid product from the reaction without replacement."""
         if self._n_sampled == self._total_product_size:
-            raise ValueError(f"Sampled {self._n_sampled} of {self._total_product_size} products in reaction - "
-                             f"there are no more left to sample")
+            raise ValueError(
+                f"Sampled {self._n_sampled} of {self._total_product_size} products in reaction - no more left to sample"
+            )
         selection_mask: list[int | None] = [self.Empty] * self.n_cycles
         selection_order: list[int] = list(range(self.n_cycles))
         random.shuffle(selection_order)
@@ -129,19 +142,14 @@ class DisallowTracker:
 
     def _get_reagent_exhaust_counts(self) -> dict[tuple[int,], int]:
         """
-        Returns a dictionary denoting when reagents for a site are exhausted.
+        Calculates the number of combinations a reagent or reagent pair must be in
+        before it is considered "exhausted". This is used to trigger the retirement
+        of reagent combinations.
 
-        For example is the reagent counts are [3,4,5] then the dictionary looks like this:
-            {(0,): 20, (1,): 15, (2,): 12, (0, 1): 5, (0, 2): 4, (1, 2): 3}
-        which means that a *particular* reagent at:
-            site 0 is exhausted if it has been sampled in 20 (4*5) molecules,
-            site 1 is exhausted if it has been sampled in 15 (3*5) molecules,
-            ...
-        also:
-            A *particular pair* of reagents used in sites (0,2) are exhausted if they have been sampled 4 times
-            and so on for the other reagents sites
-
-        :return: dict[tuple[int,], int]
+        Example for reagent_counts = [3, 4, 5]:
+            - A reagent at site 0 is in 4 * 5 = 20 products.
+            - A pair of reagents at sites (0, 2) is in 4 products.
+        The returned dictionary stores these counts.
         """
         s = range(self.n_cycles)
         all_set = {*list(range(self.n_cycles))}
@@ -149,30 +157,27 @@ class DisallowTracker:
         return {p: np.prod(self._initial_reagent_counts[list(all_set - {*list(p)})]) for p in power_set}
 
     def _update(self, selected: list[int | None]):
-        """ Does the updates to the disallow masks w/o the error checking of parameters"""
-        # ok now start the disallow fun
+        """
+        Internal method to update the disallow masks without parameter checking.
+
+        For a given selection (e.g., [4, 5, 3]), this method adds entries to the
+        disallow mask for all partial combinations. For example, it will add:
+        - 4 to the disallowed set for the key (None, 5, 3)
+        - 5 to the disallowed set for the key (4, None, 3)
+        - 3 to the disallowed set for the key (4, 5, None)
+        """
         for idx, value in enumerate(selected):
-            # save what reagent_index was used at current position and set this
-            # index to 'to_fill' then update the dictionary index by selected (w/None)
-            # to include the value - meaning that this value can not be selected if the remaining
-            # synthons are selected
-            #   [4, 5, 3] -> [None, 5, 3]  then set indexed by disallow_mask[[None,5,3]] gets 'value' added
-            #    meaning that 4 can not be selected as a reagent when [None, 5, 3] is selected in the select step
+            original_value = selected[idx]
             selected[idx] = self.To_Fill
             if value is not None and value not in self._disallow_mask[tuple(selected)]:
                 if value != self.Empty:
                     self._disallow_mask[tuple(selected)].add(value)
-                    # now we get the counts to see if we need to retire a reagent so
-                    # get the key, and then get the count for that key
+
+                    # Check if a reagent or reagent combination is now exhausted.
                     count_key = tuple([r_pos for r_pos, r_idx in enumerate(selected) if r_idx != self.To_Fill])
                     if self._reagent_exhaust_counts[count_key] == len(self._disallow_mask[tuple(selected)]):
-                        # Here comes the confusing part.  If we have exhausted a reagent then we need
-                        # to update the disallow for 'empty' pairs.
-                        # Let say we are updating [None, 5, 3] and have exhausted pair 5,3 then we need to
-                        # say that if we get the pattern [empty, 5, to_fill] during the select step
-                        # meaning that we spot 0 is empty, 1 has reagent id 5 and 2 is currently being selected
-                        # that we do not select a 3 for position 2 or a 5 for position 1.
-                        # The following recursive call deals with that.
-
+                        # If a combination is exhausted (e.g., all products containing the pair (reagent 5, reagent 3)
+                        # have been sampled), we must recursively update the disallow mask for all sub-combinations.
+                        # This is a complex but crucial step for correctness.
                         self._update([self.Empty if v == self.To_Fill else v for v in selected])
-            selected[idx] = value
+            selected[idx] = original_value

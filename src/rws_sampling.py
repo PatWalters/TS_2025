@@ -1,15 +1,17 @@
 import random
 from multiprocessing import Pool
 from typing import List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from tqdm.auto import tqdm
-from rws_reagent import Reagent
-from ts_logger import get_logger
-from rws_utils import read_reagents
+
 from evaluators import DBEvaluator, LookupEvaluator
+from rws_reagent import Reagent
+from rws_utils import read_reagents
+from ts_logger import get_logger
 
 
 class RWSSampler:
@@ -48,7 +50,7 @@ class RWSSampler:
         self.reagent_lists = read_reagents(reagent_file_list, num_to_select)
         self.num_prods = np.prod([len(x) for x in self.reagent_lists])
         self.logger.info(f"{self.num_prods:.2e} possible products")
-        
+
     def get_num_prods(self) -> int:
         """
         Get the total number of possible products
@@ -83,14 +85,14 @@ class RWSSampler:
         score = np.nan
         product_smiles = "FAIL"
         if prod:
-           prod_mol = prod[0][0]  # RunReactants returns Tuple[Tuple[Mol]]
-           Chem.SanitizeMol(prod_mol)
-           product_smiles = Chem.MolToSmiles(prod_mol)
-           if isinstance(self.evaluator, DBEvaluator) or isinstance(self.evaluator, LookupEvaluator):
-              score = self.evaluator.evaluate(product_name)
-              score = float(score)
-           else:
-              score = self.evaluator.evaluate(prod_mol)
+            prod_mol = prod[0][0]  # RunReactants returns Tuple[Tuple[Mol]]
+            Chem.SanitizeMol(prod_mol)
+            product_smiles = Chem.MolToSmiles(prod_mol)
+            if isinstance(self.evaluator, DBEvaluator) or isinstance(self.evaluator, LookupEvaluator):
+                score = self.evaluator.evaluate(product_name)
+                score = float(score)
+            else:
+                score = self.evaluator.evaluate(prod_mol)
         return [score, product_smiles, product_name]
 
     def warm_up(self, num_warmup_trials=3, results_filename="results.csv"):
@@ -106,36 +108,36 @@ class RWSSampler:
         pack = []
         for i in reagent_count_list:
             if i < rmax:
-                pack.append((1,rmax // i,rmax % i))
+                pack.append((1, rmax // i, rmax % i))
             else:
-                pack.append((0,))    
+                pack.append((0,))
 
         for i in range(num_warmup_trials):
             matrix = []
             for j, nr in enumerate(reagent_count_list):
-                idx_r = list(range(0,nr))
+                idx_r = list(range(0, nr))
                 random.shuffle(idx_r)
                 if pack[j][0]:
-                   matrix.append(idx_r * pack[j][1] + idx_r[:pack[j][2]] )
+                    matrix.append(idx_r * pack[j][1] + idx_r[: pack[j][2]])
                 else:
-                   matrix.append(idx_r)
-            pairs.extend(np.array(matrix).transpose())  
-        
+                    matrix.append(idx_r)
+            pairs.extend(np.array(matrix).transpose())
+
         warmup_scores = []
         # avoid multiprocessing overhead if nprocess == 1 for fast scoring method
-        if self.processes >1:
-           with Pool(self.processes) as pool:
+        if self.processes > 1:
+            with Pool(self.processes) as pool:
                 results = pool.map(self.evaluate, pairs)
         else:
-           results = []
-           for p in pairs:
-               results.append(self.evaluate(p))
+            results = []
+            for p in pairs:
+                results.append(self.evaluate(p))
         # initialize each reagent
-        for r, p in zip(results,pairs):
-            if np.isfinite(r[0]):             
-               warmup_scores.append(r[0])
-               for idx, rdx in enumerate(p):
-                   self.reagent_lists[idx][rdx].add_score(r[0]*self.scaling)
+        for r, p in zip(results, pairs):
+            if np.isfinite(r[0]):
+                warmup_scores.append(r[0])
+                for idx, rdx in enumerate(p):
+                    self.reagent_lists[idx][rdx].add_score(r[0] * self.scaling)
         #
         prior_mean = np.mean(warmup_scores) * self.scaling
         prior_std = np.std(warmup_scores)
@@ -148,7 +150,7 @@ class RWSSampler:
 
         # write the results to disk
         out_df = pd.DataFrame(results, columns=["score", "SMILES", "Name"])
-        out_df.to_csv(results_filename, index=False, na_rep='nan')
+        out_df.to_csv(results_filename, index=False, na_rep="nan")
         # logging
         self.logger.info(
             f"warmup score stats: "
@@ -157,14 +159,20 @@ class RWSSampler:
             f"std={np.std(warmup_scores):0.4f}, "
             f"min={np.min(warmup_scores):0.4f}, "
             f"max={np.max(warmup_scores):0.4f}"
-            )
-        # 
+        )
+        #
         self.num_warmup = len(results)
         return self.num_warmup
 
-    def search(self, min_cpds_per_core:int=30, percent_of_library:float=0.001, stop:int=1000,results_filename="results.csv"):
+    def search(
+        self,
+        min_cpds_per_core: int = 30,
+        percent_of_library: float = 0.001,
+        stop: int = 1000,
+        results_filename="results.csv",
+    ):
         """
-        Run the search with roulette wheel selection 
+        Run the search with roulette wheel selection
         :param: min_cpds_per_core: the minimum number of compounds collected for scoring per core per iteration
         :param: percent_of_library: percent of the library to be screened
         :param: stop: number of resamples on a roll
@@ -174,7 +182,7 @@ class RWSSampler:
         out_list = []
         n_resample = 0
         rng = np.random.default_rng()
-        nsearch = int(percent_of_library*self.num_prods - self.num_warmup)
+        nsearch = int(percent_of_library * self.num_prods - self.num_warmup)
         count = 0
         n_component = len(self.reagent_lists)
         idx_c = 0
@@ -186,86 +194,91 @@ class RWSSampler:
         # set the minimum number of compounds required for scoring in a batch mode
         min_cpds_per_batch = self.processes * min_cpds_per_core
 
-        with tqdm(total=nsearch, bar_format='{l_bar}{bar}| {elapsed}<{remaining}, {rate_fmt}{postfix}', disable=self.hide_progress) as pbar:
-          while (len(uniq) < nsearch):
-            matrix = []
-            pairs = []
+        with tqdm(
+            total=nsearch,
+            bar_format="{l_bar}{bar}| {elapsed}<{remaining}, {rate_fmt}{postfix}",
+            disable=self.hide_progress,
+        ) as pbar:
+            while len(uniq) < nsearch:
+                matrix = []
+                pairs = []
 
-            for ii, rg in enumerate(self.reagent_lists):
-                # sample scores
-                stds = np.array([r.posterior_std  for r in rg])
-                mu   = np.array([r.posterior_mean for r in rg])
-                rg_score = rng.normal(size=len(rg)) * stds + mu
-                # apply thermal cycling
-                if ii == idx_c:
-                   # heat up
-                   rg_score = np.exp((rg_score-np.mean(rg_score))/np.std(rg_score)/self.alpha)
-                else: 
-                   # cool down 
-                   rg_score = np.exp((rg_score-np.mean(rg_score))/np.std(rg_score)/self.beta)
-                # roulette wheel selection
-                sele = np.random.choice(len(rg),num_per_cycle,p=rg_score / np.sum(rg_score))
-                matrix.append(sele)
-            idx_c = (idx_c + 1) % n_component    
-            pairs = np.array(matrix).transpose()
+                for ii, rg in enumerate(self.reagent_lists):
+                    # sample scores
+                    stds = np.array([r.posterior_std for r in rg])
+                    mu = np.array([r.posterior_mean for r in rg])
+                    rg_score = rng.normal(size=len(rg)) * stds + mu
+                    # apply thermal cycling
+                    if ii == idx_c:
+                        # heat up
+                        rg_score = np.exp((rg_score - np.mean(rg_score)) / np.std(rg_score) / self.alpha)
+                    else:
+                        # cool down
+                        rg_score = np.exp((rg_score - np.mean(rg_score)) / np.std(rg_score) / self.beta)
+                    # roulette wheel selection
+                    sele = np.random.choice(len(rg), num_per_cycle, p=rg_score / np.sum(rg_score))
+                    matrix.append(sele)
+                idx_c = (idx_c + 1) % n_component
+                pairs = np.array(matrix).transpose()
 
-            n_uniq = 0
-            for comb in pairs:
-                ss = '_'.join(str(rr) for rr in comb)
-                if ss not in uniq:
-                   pairs_u.append(comb)
-                   uniq[ss] = None
-                   n_resample = 0
-                   n_uniq += 1
+                n_uniq = 0
+                for comb in pairs:
+                    ss = "_".join(str(rr) for rr in comb)
+                    if ss not in uniq:
+                        pairs_u.append(comb)
+                        uniq[ss] = None
+                        n_resample = 0
+                        n_uniq += 1
+                    else:
+                        n_resample += 1
+                # stop criteria check
+                if n_resample >= stop:
+                    self.logger.info(f"Stop criteria reached with the number of resamples: {n_resample}")
+                    break
+
+                if len(uniq) < nsearch:
+                    # adaptive Temp control
+                    if n_uniq < se_threshold_alpha:
+                        self.alpha += 0.01
+                        if n_uniq == 0:
+                            self.beta += 0.001
+                    # collect enough compounds to maximize multiprocessing efficiency
+                    if len(pairs_u) < min_cpds_per_batch:
+                        continue
+
+                # avoid multiprocessing overhead if nprocess == 1 for fast scoring method
+                if self.processes > 1:
+                    with Pool(self.processes) as pool:
+                        results = pool.map(self.evaluate, pairs_u)
                 else:
-                   n_resample += 1 
-            # stop criteria check
-            if n_resample >= stop: 
-                self.logger.info(f"Stop criteria reached with the number of resamples: {n_resample}")
-                break
-            
-            if len(uniq) < nsearch: 
-                # adaptive Temp control
-                if n_uniq < se_threshold_alpha:
-                   self.alpha += 0.01
-                   if n_uniq == 0:
-                      self.beta += 0.001
-                # collect enough compounds to maximize multiprocessing efficiency
-                if len(pairs_u) < min_cpds_per_batch: 
-                   continue
-            
-            # avoid multiprocessing overhead if nprocess == 1 for fast scoring method        
-            if self.processes >1:
-               with Pool(self.processes) as pool:
-                    results = pool.map(self.evaluate, pairs_u)
-            else:
-               results = []
-               for p in pairs_u:
-                   results.append(self.evaluate(p))
-            # update  
-            for r, p in zip(results,pairs_u):
-                if np.isfinite(r[0]):
-                   out_list.append(r)
-                   for idx, rdx in enumerate(p):
-                       self.reagent_lists[idx][rdx].single_update(r[0]*self.scaling)                          
-            # write to disk
-            out_df = pd.DataFrame(results)
-            out_df.to_csv(results_filename, mode='a', header=False, index=False, na_rep='nan')
-            # logging
-            if count % 100 == 0:
-                if self.scaling > 0:
-                   top_score, top_smiles, top_name = max(out_list)
-                else:
-                   top_score, top_smiles, top_name = min(out_list)
-                self.logger.info(f"Iteration: {count} best score: {top_score:2f} smiles: {top_smiles} combi: {top_name}")
-            # progressbar update
-            incr = len(pairs_u)
-            if pbar.n + incr > nsearch:
-               incr = nsearch - pbar.n
-            pbar.update(incr)
-            # clear pairs_u       
-            pairs_u = []
-            # iterations
-            count += 1
+                    results = []
+                    for p in pairs_u:
+                        results.append(self.evaluate(p))
+                # update
+                for r, p in zip(results, pairs_u):
+                    if np.isfinite(r[0]):
+                        out_list.append(r)
+                        for idx, rdx in enumerate(p):
+                            self.reagent_lists[idx][rdx].single_update(r[0] * self.scaling)
+                # write to disk
+                out_df = pd.DataFrame(results)
+                out_df.to_csv(results_filename, mode="a", header=False, index=False, na_rep="nan")
+                # logging
+                if count % 100 == 0:
+                    if self.scaling > 0:
+                        top_score, top_smiles, top_name = max(out_list)
+                    else:
+                        top_score, top_smiles, top_name = min(out_list)
+                    self.logger.info(
+                        f"Iteration: {count} best score: {top_score:2f} smiles: {top_smiles} combi: {top_name}"
+                    )
+                # progressbar update
+                incr = len(pairs_u)
+                if pbar.n + incr > nsearch:
+                    incr = nsearch - pbar.n
+                pbar.update(incr)
+                # clear pairs_u
+                pairs_u = []
+                # iterations
+                count += 1
         return out_list
-

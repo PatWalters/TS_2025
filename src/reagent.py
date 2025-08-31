@@ -12,7 +12,7 @@ class Reagent:
         "known_var",
         "current_mean",
         "current_std",
-        "current_phase"
+        "current_phase",
     ]
 
     def __init__(self, reagent_name: str, smiles: str):
@@ -38,7 +38,7 @@ class Reagent:
         :return: None
         """
         if self.current_phase == "search":
-            current_var = self.current_std ** 2
+            current_var = self.current_std**2
             # Then do the bayesian update
             self.current_mean = self._update_mean(current_var=current_var, observed_value=score)
             self.current_std = self._update_std(current_var=current_var)
@@ -54,7 +54,7 @@ class Reagent:
         :return: sample from the prior distribution
         """
         if self.current_phase != "search":
-            raise ValueError(f"Must call Reagent.init() before sampling")
+            raise ValueError("Must call Reagent.init() before sampling")
         return np.random.normal(loc=self.current_mean, scale=self.current_std)
 
     def init_given_prior(self, prior_mean: float, prior_std: float):
@@ -81,7 +81,7 @@ class Reagent:
         # during warmup.
         # Likely, each reagent has a smaller standard deviation than the one across all warmup
         # but this still practically works well.
-        self.known_var = prior_std ** 2
+        self.known_var = prior_std**2
 
         self.current_phase = "search"
 

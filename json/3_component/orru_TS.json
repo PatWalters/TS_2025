@@ -1,8 +1,8 @@
 {
     "reagent_file_list": [
-        "../reactions/3_component/orru_reactant_0.smi",
-        "../reactions/3_component/orru_reactant_1.smi",
-        "../reactions/3_component/orru_reactant_2.smi"
+        "../reactions/3_component/orru_reagent_0.smi",
+        "../reactions/3_component/orru_reagent_1.smi",
+        "../reactions/3_component/orru_reagent_2.smi"
     ],
     "reaction_smarts": "[#6H](-[#6:1])=O.[#6]-[#8]-[#6](=O)-[#6](-[#6:2])C#N.[#7H2]-[#6:3]>>[#6]-[#8]-[#6](=O)[C@]1([#6:2])[#7]=[#6]-[#7](-[#6:3])-[#6@H]1-[#6:1]",
     "num_warmup_trials": 5,

@@ -1,6 +1,27 @@
-from typing import List, Optional
+import json
+from typing import List, Optional, Union
 
+from pydantic import BaseModel
+
+from config import TSConfig, RWSConfig
 from reagent import Reagent
+
+
+def load_config(json_filename: str) -> Union[TSConfig, RWSConfig]:
+    """
+    Loads, validates, and returns the configuration from a JSON file.
+
+    :param json_filename: Path to the input JSON file.
+    :return: A validated Pydantic config object (TSConfig or RWSConfig).
+    """
+    with open(json_filename, 'r') as f:
+        data = json.load(f)
+
+    if "num_ts_iterations" in data:
+        return TSConfig(**data)
+    else:
+        return RWSConfig(**data)
+
 
 
 def create_reagents(filename: str, num_to_select: Optional[int] = None) -> List[Reagent]:
@@ -11,7 +32,7 @@ def create_reagents(filename: str, num_to_select: Optional[int] = None) -> List[
     :return: List of Reagents
     """
     reagent_list = []
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         for line in f.readlines():
             smiles, reagent_name = line.split()
             reagent = Reagent(reagent_name=reagent_name, smiles=smiles)

@@ -1,35 +1,40 @@
 #!/usr/bin/env python
 
-import importlib
 import sys
+import importlib
 from datetime import timedelta
 from timeit import default_timer as timer
-from rws_utils import read_input
-from rws_run import run_rws
+
 from rdkit import RDLogger
-RDLogger.DisableLog('rdApp.*')
 
-def parse_input_dict(input_data: dict) -> None:
-    """
-    Parse the input dictionary and add the necessary information
-    :param input_data:
-    """
-    module = importlib.import_module("evaluators")
-    evaluator_class_name = input_data["evaluator_class_name"]
-    class_ = getattr(module, evaluator_class_name)
-    evaluator_arg = input_data["evaluator_arg"]
-    evaluator = class_(evaluator_arg)
-    input_data['evaluator_class'] = evaluator
+from config import RWSConfig
+from rws_run import run_rws
+from ts_utils import load_config
 
+RDLogger.DisableLog("rdApp.*")
 
 
 def main():
     start = timer()
+    if len(sys.argv) != 2:
+        print(f"usage: {sys.argv[0]} infile.json")
+        sys.exit(1)
+
     json_filename = sys.argv[1]
-    input_dict = read_input(json_filename)
-    result_df = run_rws(input_dict)
-    outfile_name = input_dict["results_filename"]
-    result_df.sort_values("score",ascending=False).to_csv(outfile_name,index=False)
+    config = load_config(json_filename)
+    if not isinstance(config, RWSConfig):
+        print(f"Error: {json_filename} is not a valid RWS config file.")
+        sys.exit(1)
+
+    # Dynamically load the evaluator
+    module = importlib.import_module("evaluators")
+    evaluator_class = getattr(module, config.evaluator_class_name)
+    config.evaluator_class = evaluator_class(config.evaluator_arg.dict())
+
+    result_df = run_rws(config)
+    if config.results_filename:
+        result_df.sort_values("score", ascending=False).to_csv(config.results_filename, index=False)
+
     end = timer()
     print("Elapsed time", timedelta(seconds=end - start))
 

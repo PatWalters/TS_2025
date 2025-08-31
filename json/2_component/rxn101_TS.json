@@ -1,7 +1,7 @@
 {
     "reagent_file_list": [
-        "../reactions/2_component/rxn101_reactant_0.smi",
-        "../reactions/2_component/rxn101_reactant_1.smi"
+        "../reactions/2_component/rxn101_reagent_0.smi",
+        "../reactions/2_component/rxn101_reagent_1.smi"
     ],
     "reaction_smarts": "[N;D1$(N-[#6]),D2$(N(-[#6])-[#6]);$(N-[#6])!$(N-C=[O,N,S]):1].[C;D1,$(C[#6]):2](=[OD1:3])[OD1,Cl]>>[N:1][C:2](=[O:3])",
     "num_warmup_trials": 5,

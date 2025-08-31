@@ -11,8 +11,9 @@ def get_logger(name: str = None, level: str = "INFO", filename: Optional[str] = 
     :return: logger
     """
     logging.basicConfig(
-        format="%(asctime)s,%(msecs)d %(levelname)-8s %(pathname)s:%(lineno)d %(message)s", datefmt="%Y-%m-%d:%H:%M:%S",
-        filename=filename
+        format="%(asctime)s,%(msecs)d %(levelname)-8s %(pathname)s:%(lineno)d %(message)s",
+        datefmt="%Y-%m-%d:%H:%M:%S",
+        filename=filename,
     )
     if name is None:
         name = "TSLogger"

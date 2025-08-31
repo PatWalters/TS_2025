@@ -1,19 +1,18 @@
+import functools
+import math
 import random
 from typing import List, Optional, Tuple
 
-import functools
-import math
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from tqdm.auto import tqdm
 
 from disallow_tracker import DisallowTracker
+from evaluators import DBEvaluator, LookupEvaluator
 from reagent import Reagent
 from ts_logger import get_logger
 from ts_utils import read_reagents
-from evaluators import DBEvaluator, LookupEvaluator
-
 
 
 class ThompsonSampler:
@@ -134,66 +133,81 @@ class ThompsonSampler:
                 [reagent.add_score(res) for reagent in selected_reagents]
         return product_smiles, product_name, res
 
+    def _perform_warmup_trial(self, component_idx: int, reagent_idx: int) -> Optional[List]:
+        """Perform a single warmup trial for a specific reagent."""
+        reagent_count_list = [len(x) for x in self.reagent_lists]
+        partner_list = [x for x in range(len(self.reagent_lists)) if x != component_idx]
+
+        current_list = [DisallowTracker.Empty] * len(self.reagent_lists)
+        current_list[component_idx] = DisallowTracker.To_Fill
+        disallow_mask = self._disallow_tracker.get_disallowed_selection_mask(current_list)
+
+        if reagent_idx not in disallow_mask:
+            current_list[component_idx] = reagent_idx
+            # Randomly select reagents for each additional component
+            for p_idx in partner_list:
+                current_list[p_idx] = DisallowTracker.To_Fill
+                disallow_mask = self._disallow_tracker.get_disallowed_selection_mask(current_list)
+                selection_scores = np.random.uniform(size=reagent_count_list[p_idx])
+                selection_scores[list(disallow_mask)] = np.nan
+                current_list[p_idx] = np.nanargmax(selection_scores).item(0)
+
+            self._disallow_tracker.update(current_list)
+            product_smiles, product_name, score = self.evaluate(current_list)
+            if np.isfinite(score):
+                return [score, product_smiles, product_name]
+        return None
+
+    def _initialize_reagents(self, warmup_scores: List[float]):
+        """Initialize reagent scores based on warmup results."""
+        if not warmup_scores:
+            self.logger.warning("No successful evaluations during warmup. Reagents will not be initialized.")
+            return
+
+        prior_mean = np.mean(warmup_scores)
+        prior_std = np.std(warmup_scores)
+        self._warmup_std = prior_std
+
+        for i, reagent_list in enumerate(self.reagent_lists):
+            for j, reagent in enumerate(reagent_list):
+                try:
+                    reagent.init_given_prior(prior_mean=prior_mean, prior_std=prior_std)
+                except ValueError:
+                    self.logger.info(
+                        f"Skipping reagent {reagent.reagent_name} because there were no "
+                        f"successful evaluations during warmup"
+                    )
+                    self._disallow_tracker.retire_one_synthon(i, j)
+
     def warm_up(self, num_warmup_trials=3):
         """Warm-up phase, each reagent is sampled with num_warmup_trials random partners
         :param num_warmup_trials: number of times to sample each reagent
         """
-        # get the list of reagent indices
-        idx_list = list(range(0, len(self.reagent_lists)))
-        # get the number of reagents for each component in the reaction
-        reagent_count_list = [len(x) for x in self.reagent_lists]
         warmup_results = []
-        for i in idx_list:
-            partner_list = [x for x in idx_list if x != i]
-            # The number of reagents for this component
-            current_max = reagent_count_list[i]
-            # For each reagent...
-            for j in tqdm(range(0, current_max), desc=f"Warmup {i + 1} of {len(idx_list)}", disable=self.hide_progress):
-                # For each warmup trial...
-                for k in range(0, num_warmup_trials):
-                    current_list = [DisallowTracker.Empty] * len(idx_list)
-                    current_list[i] = DisallowTracker.To_Fill
-                    disallow_mask = self._disallow_tracker.get_disallowed_selection_mask(current_list)
-                    if j not in disallow_mask:
-                        ## ok we can select this reagent
-                        current_list[i] = j
-                        # Randomly select reagents for each additional component of the reaction
-                        for p in partner_list:
-                            # tell the disallow tracker which site we are filling
-                            current_list[p] = DisallowTracker.To_Fill
-                            # get the new disallow mask
-                            disallow_mask = self._disallow_tracker.get_disallowed_selection_mask(current_list)
-                            selection_scores = np.random.uniform(size=reagent_count_list[p])
-                            # null out the disallowed ones
-                            selection_scores[list(disallow_mask)] = np.nan
-                            # and select a random one
-                            current_list[p] = np.nanargmax(selection_scores).item(0)
-                        self._disallow_tracker.update(current_list)
-                        product_smiles, product_name, score = self.evaluate(current_list)
-                        if np.isfinite(score):
-                            warmup_results.append([score, product_smiles, product_name])
+        num_components = len(self.reagent_lists)
 
-        warmup_scores = [ws[0] for ws in warmup_results]
+        for i in range(num_components):
+            num_reagents = len(self.reagent_lists[i])
+            for j in tqdm(range(num_reagents), desc=f"Warmup {i + 1} of {num_components}", disable=self.hide_progress):
+                for _ in range(num_warmup_trials):
+                    result = self._perform_warmup_trial(component_idx=i, reagent_idx=j)
+                    if result:
+                        warmup_results.append(result)
+
+        warmup_scores = [res[0] for res in warmup_results]
         self.logger.info(
             f"warmup score stats: "
             f"cnt={len(warmup_scores)}, "
-            f"mean={np.mean(warmup_scores):0.4f}, "
-            f"std={np.std(warmup_scores):0.4f}, "
-            f"min={np.min(warmup_scores):0.4f}, "
-            f"max={np.max(warmup_scores):0.4f}")
-        # initialize each reagent
-        prior_mean = np.mean(warmup_scores)
-        prior_std = np.std(warmup_scores)
-        self._warmup_std = prior_std
-        for i in range(0, len(self.reagent_lists)):
-            for j in range(0, len(self.reagent_lists[i])):
-                reagent = self.reagent_lists[i][j]
-                try:
-                    reagent.init_given_prior(prior_mean=prior_mean, prior_std=prior_std)
-                except ValueError:
-                    self.logger.info(f"Skipping reagent {reagent.reagent_name} because there were no successful evaluations during warmup")
-                    self._disallow_tracker.retire_one_synthon(i, j)
-        self.logger.info(f"Top score found during warmup: {max(warmup_scores):.3f}")
+            f"mean={np.mean(warmup_scores) if warmup_scores else 0:.4f}, "
+            f"std={np.std(warmup_scores) if warmup_scores else 0:.4f}, "
+            f"min={np.min(warmup_scores) if warmup_scores else 0:.4f}, "
+            f"max={np.max(warmup_scores) if warmup_scores else 0:.4f}"
+        )
+
+        self._initialize_reagents(warmup_scores)
+
+        if warmup_scores:
+            self.logger.info(f"Top score found during warmup: {max(warmup_scores):.3f}")
         return warmup_results
 
     def search(self, num_cycles=25):
@@ -201,6 +215,10 @@ class ThompsonSampler:
         :param: num_cycles: number of search iterations
         :return: a list of SMILES and scores
         """
+        # Note on performance: The main computational cost of this loop is the `evaluate` method,
+        # which typically involves expensive chemical simulations or model predictions.
+        # The overhead of the loop itself (e.g., creating numpy arrays) is negligible in comparison.
+        # Any significant performance optimization efforts should focus on the evaluator.
         out_list = []
         rng = np.random.default_rng()
         for i in tqdm(range(0, num_cycles), desc="Cycle", disable=self.hide_progress):
